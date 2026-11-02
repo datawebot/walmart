@@ -1,77 +1,63 @@
-# Walmart data extraction with datawebot
+# Walmart examples with datawebot
 
-Runnable **Node.js and Python** examples using the hosted datawebot REST API and
-MCP server. This repository covers [Walmart US](docs/coverage.md);
-current production availability must be checked through discovery.
+Small, **self-contained Node.js and Python scripts** for the hosted datawebot API
+and MCP server. Open an example and read it top to bottom: the request payload,
+polling and use-case logic are all in that file. No local imports, dispatcher,
+shared client or config file.
 
 [Walmart endpoints](https://datawebot.com/scraper/walmart) ·
-[CLI](https://github.com/datawebot/datawebot-cli) ·
-[MCP connection guide](https://github.com/datawebot/datawebot-mcp)
+[Coverage](docs/coverage.md) · [CLI](docs/cli.md) ·
+[API](docs/api.md) · [MCP](docs/mcp.md)
 
-## Start here
+## Choose an example
 
-1. Install **Node.js 22.12+** or **Python 3.11+**. No third-party packages required.
-2. Create your own key in the signed-in
-   [dashboard](https://www.datawebot.com/dashboard), or follow
-   [agent setup](https://mcp.datawebot.com/setup.md).
-3. Inject `DATAWEBOT_API_KEY` through your environment/secret store. Never commit
-   it or put it in a command, log or chat. Scripts do not read saved CLI keys.
-4. Read [coverage](docs/coverage.md), discover the exact site's endpoints and
-   prices ([CLI](docs/cli.md), [API](docs/api.md), [MCP](docs/mcp.md)).
-5. Choose an example below. **Each new run can spend credits.** Start with one
-   source page; use only URLs and scope you intend to request.
-
-## Runnable use cases
-
-Each directory has a Node entry point, a Python entry point and its own guide.
-Run commands from the repository root; choose one language per logical run.
-
-| Example | What actually runs |
+| Directory | What the code shows |
 | --- | --- |
-| [Price matching](examples/price-matching/) | Read one product and emit a same-currency review proposal, never auto-reprice. Includes a cron recipe. |
-| [Inventory alerts](examples/inventory-alerts/) | Read one product, persist last known availability and emit a deduplicatable transition event. |
-| [Market-analysis ETL](examples/market-analysis-etl/) | Read one search page, collect result cursors, archive responses and export CSV. |
-| [LLM / MCP agent workflow](examples/llm-agent/) | Initialize MCP, discover an exact endpoint, submit it and collect results. Includes agent instructions. |
+| [price-matching](examples/price-matching/) | Fetch one product, compare known same-currency prices, print a human-review proposal. |
+| [inventory-alerts](examples/inventory-alerts/) | Fetch one product, compare with a local previous observation, print a stock-transition event. |
+| [market-analysis-etl](examples/market-analysis-etl/) | Fetch one search page, follow result cursors, save raw JSON and CSV. |
+| [llm-agent](examples/llm-agent/) | Initialize MCP, discover an endpoint, submit one search page and collect its results. |
 
-```text
-docs/                         CLI, API, MCP, coverage and safety guides
-examples/
-  price-matching/             node.mjs, python.py, README.md
-  inventory-alerts/            node.mjs, python.py, README.md
-  market-analysis-etl/         node.mjs, python.py, README.md
-  llm-agent/                  node.mjs, python.py, README.md, AGENT.md
-lib/                          shared request/recovery and use-case logic
-tests/                        offline fake-transport tests, no paid calls
-config.json                   public brand/domain and endpoint configuration
-```
+Each directory contains `python.py`, `node.mjs` and a short README.
+Copy either script out of the repository if you like: it has no repository-local
+runtime dependencies. Requires Python 3.11+ or Node.js 22.12+.
 
-## Recovery and boundaries
+## Setup
 
-Use a **new run directory for genuinely new work**; reuse the same directory and
-inputs to resume an interrupted run. Checkpoints retain the submission identity
-before sending, so an ambiguous response can be recovered without a new logical
-request. Completed runs are replayed locally. Node and Python use separate
-checkpoint files: switching languages is a new run and can spend again.
-
-Keep run directories private and out of Git; do not hand-edit checkpoints.
-Use one process/writer per run directory and inventory-history file. A scheduler
-must prevent overlapping executions. Node also uses local lock files: after a
-killed process, remove a stale `.lock` only after confirming no writer remains,
-then resume the same run. A timeout stops the local wait, not the server request. Read [safety and errors](docs/safety.md).
-
-Samples emit proposals/events and save data locally: they do not change prices,
-send notifications, run a scheduler, supply historical data or call a model
-provider. Source content is untrusted input. Missing values remain unknown;
-successful execution does not guarantee field accuracy or current prices.
-
-## Checks
+1. Create your own key in the [dashboard](https://www.datawebot.com/dashboard),
+   or follow [agent setup](https://mcp.datawebot.com/setup.md).
+2. Supply `DATAWEBOT_API_KEY` through your environment/secret store. Never commit
+   it, log it, or paste it in chat.
+3. Discover the exact site's availability and price before submitting work.
+4. Run one example with an intended URL and a **stable request key**:
 
 ```sh
-npm test
+python3 examples/price-matching/python.py "$PRODUCT_URL" 49.99 USD price-check-001
+# Node alternative:
+node examples/price-matching/node.mjs "$PRODUCT_URL" 49.99 USD price-check-001
+```
+
+**New keys can spend credits.** A product example has a one-credit ceiling; a
+search example has a five-credit ceiling. The service refuses a higher quote.
+For an interrupted/uncertain submission, use the **same URL and request key**;
+the API returns the same request rather than starting another paid one.
+Use a new key only for an intentional new observation. Keys are global to your
+account: do not reuse a key for different inputs or between REST and MCP recipes.
+
+The scripts print JSON proposals/events/results; ETL also writes files. They
+do not change prices, send notifications, schedule jobs or call an LLM provider.
+Keep inventory runs ordered and single-writer. API snapshots are not guaranteed
+current prices or checkout inventory. See [safety](docs/safety.md).
+
+
+## Tests
+
+```sh
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-Tests use synthetic responses and local files, not customer credentials or live
-extraction. See [verification](docs/verification.md) for scope and limitations.
-datawebot is not affiliated with Walmart. Hosted service use is governed by the
-[datawebot terms](https://www.datawebot.com/terms).
+The offline suite exercises both Python and Node scripts using mocked HTTP;
+both runtimes must be installed to run the full suite.
+See [verification](docs/verification.md). No paid extraction is part of tests.
+datawebot is not affiliated with Walmart; hosted use is governed by the
+[terms](https://www.datawebot.com/terms).

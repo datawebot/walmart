@@ -1,42 +1,33 @@
-# Verification and limitations
+# Verification and sample boundaries
 
-Checked locally on **2026-11-02** with Node **22.22.3** and Python **3.14.6**.
-Both brand configurations pass **30 Node tests and 24 Python tests** each.
-All eight public entry points per repository also passed completed-cache smoke
-checks from an unrelated working directory, without credentials or network.
-CI runs the same suites on Node 22 / Python 3.11.
+These are standalone teaching scripts, not a shared SDK or production job
+runner. Each includes its own visible payload, HTTP call, polling and use-case
+logic. No script imports repository-local code or reads a hidden config file.
 
-The examples are tested offline with synthetic API/MCP responses and temporary
-files. No credentials, live sign-in, paid extraction, notification delivery or
-commercial price changes are part of the test suite.
-
-Run from the repository root:
+Run the offline checks (Python 3.11+ and Node 22.12+):
 
 ```sh
-npm test
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-The suite covers request checkpointing and recovery, pending/paginated responses,
-failure handling, URL validation and the use cases' data handling. MCP fixtures
-reflect discovery/endpoints wrappers and completed answers without a REST-style
-status. Check the actual test names/output for exact coverage.
+Tests replace the HTTP boundary with synthetic responses. They do not sign in,
+spend credits, fetch source pages or send alerts.
 
-Public API shapes were checked against the
-[OpenAPI document](https://www.datawebot.com/openapi.json) and
-[MCP guide](https://github.com/datawebot/datawebot-mcp). CLI setup targets
-published `@datawebot/cli@0.1.2`, whose version/help were checked separately.
-Live server discovery wins over static docs.
+## Limits kept visible in the code
 
-## Deliberate limits
+- Caller supplies a stable request key. Retrying the same key/URL reuses the
+  server request; these scripts do not provide a local checkpoint/recovery SDK.
+- Do not reuse keys across recipes or for changed inputs. Use fresh keys only
+  for intentional new observations.
+- HTTP calls have 30-second timeouts and polling has a ten-minute budget.
+  After an error respect the reported Retry-After before manually retrying;
+  there is no automatic submission retry or server cancellation.
+- Inventory history assumes one ordered writer. External delivery is not
+  transactional; add an outbox for a production notification service.
+- The MCP sample targets hosted stateless JSON HTTP, not SSE/session servers.
+- The request router can hide upstream partial-result details. Rejecting exposed
+  errors cannot guarantee completeness, current prices or source accuracy.
 
-- These are one-page examples, not a generic SDK, full scheduler or alert service.
-- One writer per run directory/history file; lock scheduled jobs externally.
-- Separate languages use separate checkpoints. Switching languages can spend again.
-- Local history/stdout and external notification delivery are not one transaction.
-  Add an outbox for production delivery guarantees.
-- The API request router may present an upstream partial Job as done without
-  exposing its errors. Scripts reject errors/partial markers they receive, but
-  cannot detect hidden omissions. Field quality still requires review.
-- Public snapshots do not guarantee current price, seller/variant equivalence,
-  local inventory, complete coverage or checkout availability.
+CLI documentation still targets the separately checked published
+`@datawebot/cli@0.1.2`. Current server discovery wins over static examples.
+No fresh live extraction or field-accuracy acceptance is claimed here.

@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "test": "node --test tests/*.mjs",
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py'",
     "test:python": "python3 -m unittest discover -s tests -p 'test_*.py'"
   }
 }
