@@ -1,0 +1,9 @@
+{
+  "brand": "walmart",
+  "name": "Walmart",
+  "domains": [
+    "walmart.com"
+  ],
+  "search_endpoint": "walmart.search",
+  "product_endpoint": "walmart.product_details"
+}

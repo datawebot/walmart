@@ -1,0 +1,12 @@
+{
+  "name": "datawebot-walmart-examples",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.mjs",
+    "test:python": "python3 -m unittest discover -s tests -p 'test_*.py'"
+  }
+}
